@@ -322,7 +322,7 @@ variable "servers" {}
 
 ### subnet_id reference scenario (for single server module)
 
-with single VPC module (terraform-ncloud-modules/vpc/ncloud)
+with single `VPC module` (terraform-ncloud-modules/vpc/ncloud)
 ``` hcl
 //variable
 subnet_name = "sbn-sample-public-1"
@@ -331,7 +331,7 @@ subnet_name = "sbn-sample-public-1"
 subnet_id = module.vpc.all_subnets[var.server.subnet_name].id
 ```
 
-with multiple VPC module (terraform-ncloud-modules/vpc/ncloud)
+with multiple `VPC module` (terraform-ncloud-modules/vpc/ncloud)
 ``` hcl
 //variable
 vpc_name    = "vpc-sample"
@@ -382,7 +382,7 @@ access_control_group_ids = [module.vpcs[var.server.vpc_name].vpc.default_access_
 
 if you want to use `default_access_control_group` created by VPC with other ACGs, you must type `default` in the list.
 - with single `VPC module` &
-- if you manage ACGs within `VPC module`
+- if you manage `ACG`s within `VPC module`
 ``` hcl
 //variable
 access_control_groups = ["default", "acg-sample-public"]
@@ -394,7 +394,7 @@ access_control_group_ids = [for acg_name in var.server.default_network_interface
 ]
 ```
 - with multiple `VPC module`
-- if you manage ACGs within `VPC module`
+- if you manage `ACG`s within `VPC module`
 ``` hcl
 //variable
 vpc_name                  = "vpc-sample"
@@ -410,7 +410,7 @@ access_control_group_ids = [for acg_name in var.server.default_network_interface
 ```
 
 - with single `VPC module`
-- if you manage ACGs using `ACG module`
+- if you manage `ACG`s using `ACG module`
 ``` hcl
 //variable
 access_control_groups = ["default", "acg-sample-public"]
@@ -423,7 +423,7 @@ access_control_group_ids = [for acg_name in var.server.default_network_interface
 ```
 
 - with multiple `VPC module`
-- if you manage ACGs using `ACG module`
+- if you manage `ACG`s using `ACG module`
 ``` hcl
 //variable
 vpc_name                  = "vpc-sample"
@@ -438,8 +438,8 @@ access_control_group_ids = [for acg_name in var.server.default_network_interface
 ]
 ```
 
-- with single `VPC module` &
-- if you manage ACGs within `VPC module` and `ACG module` at the same time
+- with single `VPC module`
+- if you manage `ACG`s within `VPC module` and `ACG module` at the same time
 ``` hcl
 //variable
 access_control_groups = ["default", "acg-sample-public"]
@@ -454,8 +454,8 @@ access_control_group_ids = [for acg_name in var.server.default_network_interface
     ]
 ```
 
-- with multiple `VPC module` &
-- if you manage ACGs within `VPC module` and `ACG module` at the same time
+- with multiple `VPC module`
+- if you manage `ACG`s within `VPC module` and `ACG module` at the same time
 ``` hcl
 //variable
 vpc_name                  = "vpc-sample"
@@ -483,42 +483,42 @@ access_control_group_ids = var.server.default_network_interface.access_control_g
 
 ### init_script_id reference scenario
 
-> To use init_script, you need to create `ncloud_init_script` via terraform outside of Server module. Or, you can just create on Console or API.
-> - single init script
-> ``` hcl
-> resource "ncloud_init_script" "init-script" {
->   name = "init-sample"
->   content = file("init-sample.sh")
-> }
-> ```
-> - multiple init scripts
-> ``` hcl
-> init_scripts = [
->   {
->     name    = "init-sample-01"
->     content = file("init-sample-01.sh")
->   },
->   {
->     name    = "init-sample-02"
->     content = file("init-sample-02.sh")
->   }
-> ]
-> 
-> resource "ncloud_init_script" "init-scripts" {
->   for_each = { for init_script in var.init_scripts: init_script.name => init_script }
-> 
->   name    = each.value.name
->   content = each.value.content
-> }
-> ```
+To use `init_script`, you need to create `ncloud_init_script` via terraform outside of `Server module`. Or, you can just create on Console or API.
+- single `init_script`
+``` hcl
+resource "ncloud_init_script" "init-script" {
+  name = "init-sample"
+  content = file("init-sample.sh")
+}
+```
+- multiple `init_script`s
+``` hcl
+init_scripts = [
+  {
+    name    = "init-sample-01"
+    content = file("init-sample-01.sh")
+  },
+  {
+    name    = "init-sample-02"
+    content = file("init-sample-02.sh")
+  }
+]
 
-If you want to use one init script.
+resource "ncloud_init_script" "init-scripts" {
+  for_each = { for init_script in var.init_scripts: init_script.name => init_script }
+
+  name    = each.value.name
+  content = each.value.content
+}
+```
+
+If you want to use one `init_script`.
 ``` hcl
 //module
 init_script_id = ncloud_init_script.init_script.id
 ```
 
-If you want to specify one from multiple init scripts
+If you want to specify one from multiple `init_script`s
 ``` hcl
 //variable
 init_script_name = "init-sample-01"
@@ -529,7 +529,7 @@ init_script_id = (lookup(var.server, "init_script_name", "") != "" ?
 )
 ```
 
-or you can just type list of init_script_id manually
+or you can just type list of `init_script_id` manually
 ``` hcl
 //variable
 init_script_id = 20482
@@ -539,7 +539,7 @@ init_script_id = var.server.init_script_id
 ```
 
 ### count & start_index scenario (Multiple Servers)
-When you are using multiple server module, you can use arguments below to create indexed instances.
+When you are using multiple `Server module`, you can use arguments below to create indexed instances.
 
 If you set as below
 ``` hcl
@@ -547,7 +547,7 @@ count       = 3
 start_index = 1    // if set this 2, it starts with 002 
 ```
 then
-- server
+- `server`
 ``` hcl
 name_prefix = "svr-sample-multiple"
 ==> 
@@ -555,7 +555,7 @@ svr-sample-multiple-001
 svr-sample-multiple-002
 svr-sample-multiple-003
 ```
-- default_network_interface
+- `default_network_interface`
 ``` hcl
 name_prefix = "nic-sample-multiple"
 name_postfix = "def"
@@ -564,7 +564,7 @@ nic-sample-multiple-001-def
 nic-sample-multiple-002-def
 nic-sample-multiple-003-def
 ```
-- additional_block_storages
+- `additional_block_storages`
 ``` hcl
 name_prefix = "vol-sample-multiple"
 name_postfix = "extra"
