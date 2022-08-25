@@ -381,7 +381,7 @@ access_control_group_ids = [module.vpcs[var.server.vpc_name].vpc.default_access_
 ```
 
 if you want to use `default_access_control_group` created by VPC with other ACGs, you must type `default` in the list.
-- with single `VPC module` &
+- with single `VPC module`
 - if you manage `ACG`s within `VPC module`
 ``` hcl
 //variable
