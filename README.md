@@ -7,7 +7,7 @@
 `main.tf`
 ``` hcl
 module "server" {
-  source = "./terraform-ncloud-server"
+  source = "terraform-ncloud-modules/server/ncloud"
 
   name           = var.server.name
   description    = var.server.description
@@ -167,7 +167,7 @@ locals {
 }
 
 module "servers" {
-  source = "./terraform-ncloud-server"
+  source = "terraform-ncloud-modules/server/ncloud"
 
   for_each = { for server in local.servers: server.name => server}
 
