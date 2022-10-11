@@ -2,10 +2,16 @@
 
 This document describes the Terraform module that creates multiple Ncloud Servers.
 
+Before use `Server module`, you need create `VPC module`.
+
+- [VPC module](https://registry.terraform.io/modules/terraform-ncloud-modules/vpc/ncloud/latest)
+
+Also, you can check below scenarios.
+
 - [Variable Declaration](#variable-declaration)
 - [Module Declaration](#module-declaration)
 - [image & product reference scenario](#image--product-reference-scenario)
-- [count & start_index reference scenario](#count--startindex-reference-scenario)
+- [count & start_index reference scenario](#count--start_index-reference-scenario)
 
 
 ## Variable Declaration
