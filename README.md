@@ -199,8 +199,11 @@ module "servers" {
 
   name           = each.value.name
   description    = each.value.description
-  subnet_id      = local.module_vpcs[each.value.vpc_name].all_subnets[each.value.subnet_name].id
+  subnet_id      = local.module_vpcs[each.value.vpc_name].subnets[each.value.subnet_name].id
   login_key_name = each.value.login_key_name
+
+  // It will implemented soon. Now you can just put init_script ID directly.
+  // init_script_id = ""
 
   server_image_name  = each.value.server_image_name
   product_generation = each.value.product_generation
