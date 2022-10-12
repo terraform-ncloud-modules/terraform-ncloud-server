@@ -9,9 +9,23 @@ variable "description" {
   default     = ""
 }
 
-variable "subnet_id" {
+
+variable "vpc_name" {
   description = "(Required) See the description in the readme"
   type        = string
+  default     = null
+}
+
+variable "subnet_name" {
+  description = "(Optional) See the description in the readme"
+  type        = string
+  default     = null
+}
+
+variable "subnet_id" {
+  description = "(Optional) See the description in the readme"
+  type        = string
+  default     = null
 }
 
 variable "fee_system_type_code" {

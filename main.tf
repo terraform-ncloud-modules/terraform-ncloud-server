@@ -42,16 +42,37 @@ data "ncloud_server_product" "server_product" {
   }
 }
 
+
+data "ncloud_vpc" "vpc" {
+  count = var.vpc_name != null ? 1 : 0
+
+  filter {
+    name   = "name"
+    values = [var.vpc_name]
+  }
+}
+
+data "ncloud_subnet" "subnet" {
+  count = var.subnet_name != null ? 1 : 0
+
+  vpc_no = one(data.ncloud_vpc.vpc.*.id)
+  filter {
+    name   = "name"
+    values = [var.subnet_name]
+  }
+}
+
+
 resource "ncloud_server" "server" {
   name           = var.name
   description    = var.description
-  subnet_no      = var.subnet_id
+  subnet_no      = var.subnet_id == null ? one(data.ncloud_subnet.subnet.*.id) : var.subnet_id
   login_key_name = var.login_key_name
 
   server_image_product_code = data.ncloud_server_image.server_image.id
   # server_image_product_code = one(data.ncloud_server_image.server_image.*.id)
   # member_server_image_no    = one(data.ncloud_member_server_image.member_server_image.*.id)
-  server_product_code       = data.ncloud_server_product.server_product.product_code
+  server_product_code = data.ncloud_server_product.server_product.product_code
 
   network_interface {
     network_interface_no = ncloud_network_interface.default_nic.id
@@ -65,12 +86,27 @@ resource "ncloud_server" "server" {
   is_encrypted_base_block_storage_volume = var.is_encrypted_base_block_storage_volume
 }
 
+data "ncloud_access_control_group" "acgs" {
+  for_each = toset(lookup(var.default_network_interface, "access_control_groups", []))
+
+  vpc_no     = one(data.ncloud_vpc.vpc.*.id)
+  is_default = (each.key == "default" ? true : false)
+  filter {
+    name   = "name"
+    values = [each.key == "default" ? "${var.vpc_name}-default-acg" : each.key]
+  }
+}
+
+locals {
+  default_nic_acg_ids = [for acg_name in lookup(var.default_network_interface, "access_control_groups", []) : data.ncloud_access_control_group.acgs[acg_name].id]
+}
+
 resource "ncloud_network_interface" "default_nic" {
   name                  = var.default_network_interface.name
   description           = lookup(var.default_network_interface, "description", null)
-  subnet_no             = var.subnet_id
+  subnet_no             = var.subnet_id == null ? one(data.ncloud_subnet.subnet.*.id) : var.subnet_id
   private_ip            = lookup(var.default_network_interface, "private_ip", "") != "" ? var.default_network_interface.private_ip : null
-  access_control_groups = var.default_network_interface.access_control_group_ids
+  access_control_groups = lookup(var.default_network_interface, "access_control_group_ids", local.default_nic_acg_ids)
 }
 
 resource "ncloud_public_ip" "public_ip" {
