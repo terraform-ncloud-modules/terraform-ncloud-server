@@ -1,4 +1,4 @@
-# Multiple VPC Module
+# Multiple Server Module
 
 ## **This version of the module requires Terraform version 1.3.0 or later.**
 
@@ -185,7 +185,7 @@ module "servers" {
   subnet_name          = each.value.subnet_name
   // or "subnet_id" instead
   # subnet_id            = module.vpcs[each.value.vpc_name].subnets[each.value.subnet_name].id
-  
+
   login_key_name       = each.value.login_key_name
   init_script_id       = each.value.init_script_id
   fee_system_type_code = each.value.fee_system_type_code
