@@ -1,12 +1,10 @@
 # Multiple VPC Module
 
+## **This version of the module requires Terraform version 1.3.0 or later.**
+
 This document describes the Terraform module that creates multiple Ncloud Servers.
 
-Before use `Server module`, you need create `VPC module`.
-
-- [VPC module](https://registry.terraform.io/modules/terraform-ncloud-modules/vpc/ncloud/latest)
-
-Also, you can check below scenarios.
+You can check below scenarios.
 
 - [Variable Declaration](#variable-declaration)
 - [Module Declaration](#module-declaration)
@@ -16,69 +14,63 @@ Also, you can check below scenarios.
 
 ## Variable Declaration
 
-### `variable.tf`
+### Structure : `variable.tf`
 
-You need to create `variable.tf` and declare the VPC variable to recognize VPC variable in `terraform.tfvars`. You can change the variable name to whatever you want.
+You need to create `variable.tf` and copy & paste the variable declaration below.
+
+**You can change the variable name to whatever you want.**
 
 ``` hcl
-variable "servers" { default = [] }
+variable "servers" {
+  type = list(object({
+    create_multiple = optional(bool, false)          // If true, create multiple servers with postfixes "-001", "-002"
+    count           = optional(number, 1)            // Required when create_multiple = true
+    start_index     = optional(number, 1)            // Required when create_multiple = true
+
+    name_prefix          = string                    // Same as "name" if create_multiple = false
+    description          = optional(string, "")
+    vpc_name             = string
+    subnet_name          = string
+    login_key_name       = string
+    init_script_id       = optional(string, null)
+    fee_system_type_code = optional(string, "MTRAT") // MTRAT (default) | FXSUM
+
+    server_image_name  = string                      // "Image Name" on "terraform-ncloud-docs"
+    product_generation = string                      // "Gen" on "Server product" page on "terraform-ncloud-docs"
+    product_type       = string                      // "Type" on "Server product" page on "terraform-ncloud-docs"
+    product_name       = string                      // "Product Name" on "Server product" page on "terraform-ncloud-docs"
+
+    is_associate_public_ip                 = optional(bool, false) // Can only be true if the subnet is a public subnet.
+    is_protect_server_termination          = optional(bool, false)
+    is_encrypted_base_block_storage_volume = optional(bool, false)
+
+    default_network_interface = object({
+      name_prefix           = string                 // "name" will be "${name_prefix}-${name_postfix}" if create_multiple = false
+      name_postfix          = string
+      description           = optional(string, "")
+      private_ip            = optional(string, null)              // IP address (not CIDR)
+      access_control_groups = optional(list(string), ["default"]) // default value is ["default"], "default" is the "default access control group".
+    })
+
+    additional_block_storages = optional(list(object({
+      name_prefix  = string                          // "name" will be "${name_prefix}-${name_postfix}" if create_multiple = false
+      name_postfix = string
+      description  = optional(string, "")
+      size         = number                          // Unit = GB
+      disk_type    = optional(string, "SSD")         // SSD (default) | HDD
+    })), [])
+  }))
+  default = []
+}
+
 ```
 
-### `terraform.tfvars`
+### Example : `terraform.tfvars`
 
-You can create `terraform.tfvars` and refer to the sample below to write variable declarations.
+You can create a `terraform.tfvars` and refer to the sample below to write the variable specification you want.
 File name can be `terraform.tfvars` or anything ending in `.auto.tfvars`
 
-#### Structure
-
-``` hcl
-servers = [
-  {
-    create_multiple = bool             // (Required)
-    count           = integer          // (Required when create_multiple = true)
-    start_index     = integer          // (Required when create_multiple = true)
-
-    name_prefix    = string            // (Required)
-    description    = string            // (Optional)
-    vpc_name       = string            // (Required)
-    subnet_name    = string            // (Required)
-    login_key_name = string            // (Required)
-
-    server_image_name  = string        // (Required) "Image Name" on "terraform-ncloud-docs"
-    product_generation = string        // (Required) "Gen" on "Server product" page on "terraform-ncloud-docs"
-    product_type       = string        // (Required) "Type" on "Server product" page on "terraform-ncloud-docs"
-    product_name       = string        // (Required) "Product Name" on "Server product" page on "terraform-ncloud-docs"
-
-    fee_system_type_code = string      // (Optional), MTRAT (default) | FXSUM
-
-    is_associate_public_ip                 = bool   // (Optional), false(default), can be true only when subnet is public subnet
-    is_protect_server_termination          = bool   // (Optional), fasle(default)
-    is_encrypted_base_block_storage_volume = bool   // (Optional), fasle(default)
-
-    // (Required)
-    default_network_interface = {             
-      name_prefix           = string         // (Required) 
-      name_postfix          = string         // (Required) 
-      description           = string         // (Optional)
-      private_ip            = string         // (Optional), IP address (not CIDR)
-      access_control_groups = list(string)   // (Optional), default value is ["default"]
-    }
-
-    // (Optional)
-    additional_block_storages = [            
-      {
-        name_prefix  = string                // (Required) 
-        name_postfix = string                // (Required) 
-        description  = string                // (Optional)
-        size         = integer               // (Required), Unit = GB
-        disk_type    = string                // (Optional), SSD (default) | HDD
-      }
-    ]
-  }
-]
-```
-
-#### Example
+**It must exactly match the variable name above.**
 
 ``` hcl
 servers = [
@@ -87,18 +79,17 @@ servers = [
     count           = 2
     start_index     = 1
 
-    name_prefix    = "svr-foo"
-    description    = "foo server"
-    vpc_name       = "vpc-foo"
-    subnet_name    = "sbn-foo-public-1"
-    login_key_name = "key-workshop"
+    name_prefix          = "svr-foo"
+    description          = "foo server"
+    vpc_name             = "vpc-foo"
+    subnet_name          = "sbn-foo-public-1"
+    login_key_name       = "key-workshop"
+    fee_system_type_code = "MTRAT"
 
     server_image_name  = "CentOS 7.8 (64-bit)"
     product_generation = "G2"
     product_type       = "High CPU"
     product_name       = "vCPU 2EA, Memory 4GB, [SSD]Disk 50GB"
-
-    fee_system_type_code = "MTRAT"
 
     is_associate_public_ip                 = true
     is_protect_server_termination          = false
@@ -123,8 +114,6 @@ servers = [
     ]
   },
   {
-    create_multiple = false
-
     name_prefix    = "svr-bar"
     description    = "bar server"
     vpc_name       = "vpc-bar"
@@ -137,9 +126,9 @@ servers = [
     product_name       = "vCPU 2EA, Memory 4GB, [SSD]Disk 50GB"
 
     default_network_interface = {
-      name_prefix           = "nic-bar"
-      name_postfix          = "def"
-      description           = "default nic for svr-bar"
+      name_prefix  = "nic-bar"
+      name_postfix = "def"
+      description  = "default nic for svr-bar"
     }
   }
 ]
@@ -151,12 +140,9 @@ servers = [
 
 Map your `Server variable name` to a `local Server variable`. `Server module` are created using `local Server variables`. This eliminates the need to change the variable name reference structure in the `Server module`.
 
-Also, the `Server module` is designed to be used with `VPC module` together. So the `VPC module` must also be specified as a `local VPC module variable`.
-
 ``` hcl
 locals {
-  servers     = var.servers
-  module_vpcs = module.vpcs
+  servers = var.servers
 }
 ```
 
@@ -164,28 +150,16 @@ locals {
 
 ``` hcl
 locals {
-  flatten_servers = flatten([for server in local.servers : server.create_multiple ?
+  flatten_servers = flatten([for server in local.servers :
     [
       for index in range(server.count) : merge(
-        { name = format("%s-%03d", server.name_prefix, index + server.start_index) },
+        { name = join("", [server.name_prefix, server.create_multiple ? format("-%03d", index + server.start_index) : ""]) },
         { for attr_key, attr_val in server : attr_key => attr_val if(attr_key != "default_network_interface" && attr_key != "additional_block_storages") },
-        { default_network_interface = merge(server.default_network_interface,
-          { name = format("%s-%03d-%s", server.default_network_interface.name_prefix, index + server.start_index, server.default_network_interface.name_postfix) })
+        { default_network_interface = merge(server.default_network_interface, { name = join("", [
+          server.default_network_interface.name_prefix, server.create_multiple ? format("-%03d", index + server.start_index) : "", "-${server.default_network_interface.name_postfix}"]) })
         },
-        { additional_block_storages = [for vol in lookup(server, "additional_block_storages", []) : merge(vol,
-          { name = format("%s-%03d-%s", vol.name_prefix, index + server.start_index, vol.name_postfix) })]
-        }
-      )
-    ] :
-    [
-      merge(
-        { name = server.name_prefix },
-        { for attr_key, attr_val in server : attr_key => attr_val if(attr_key != "default_network_interface" && attr_key != "additional_block_storages") },
-        { default_network_interface = merge(server.default_network_interface,
-          { name = format("%s-%s", server.default_network_interface.name_prefix, server.default_network_interface.name_postfix) })
-        },
-        { additional_block_storages = [for vol in lookup(server, "additional_block_storages", []) : merge(vol,
-          { name = format("%s-%s", vol.name_prefix, vol.name_postfix) })]
+        { additional_block_storages = [for vol in server.additional_block_storages : merge(vol, { name = join("", [
+          vol.name_prefix, server.create_multiple ? format("-%03d", index + server.start_index) : "", "-${vol.name_postfix}"]) })]
         }
       )
     ]
@@ -194,7 +168,7 @@ locals {
 
 ```
 
-Then just copy and paste the module declaration below.
+Then just copy & paste the module declaration below.
 
 ``` hcl
 
@@ -203,42 +177,30 @@ module "servers" {
 
   for_each = { for server in local.flatten_servers : server.name => server }
 
-  name           = each.value.name
-  description    = each.value.description
-  subnet_id      = local.module_vpcs[each.value.vpc_name].subnets[each.value.subnet_name].id
-  login_key_name = each.value.login_key_name
+  name                 = each.value.name
+  description          = each.value.description
 
-  // It will implemented soon. Now you can just put init_script ID directly.
-  // init_script_id = ""
+  // you can use "vpc_name" & "subnet_name"
+  vpc_name             = each.value.vpc_name
+  subnet_name          = each.value.subnet_name
+  // or "subnet_id" instead
+  # subnet_id            = module.vpcs[each.value.vpc_name].subnets[each.value.subnet_name].id
+  
+  login_key_name       = each.value.login_key_name
+  init_script_id       = each.value.init_script_id
+  fee_system_type_code = each.value.fee_system_type_code
 
   server_image_name  = each.value.server_image_name
   product_generation = each.value.product_generation
   product_type       = each.value.product_type
   product_name       = each.value.product_name
 
-  fee_system_type_code = lookup(each.value, "fee_system_type_code", "MTRAT")
+  is_associate_public_ip                 = each.value.is_associate_public_ip
+  is_protect_server_termination          = each.value.is_protect_server_termination
+  is_encrypted_base_block_storage_volume = each.value.is_encrypted_base_block_storage_volume
 
-  is_associate_public_ip                 = lookup(each.value, "is_associate_public_ip", false)
-  is_protect_server_termination          = lookup(each.value, "is_protect_server_termination", false)
-  is_encrypted_base_block_storage_volume = lookup(each.value, "is_encrypted_base_block_storage_volume", false)
-
-  default_network_interface = {
-    name        = each.value.default_network_interface.name
-    description = lookup(each.value.default_network_interface, "description", null)
-    private_ip  = lookup(each.value.default_network_interface, "private_ip", null)
-    access_control_group_ids = [for acg_name in lookup(each.value.default_network_interface, "access_control_groups", ["default"]) :
-      acg_name == "default" ? local.module_vpcs[each.value.vpc_name].vpc.default_access_control_group_no : local.module_vpcs[each.value.vpc_name].access_control_groups[acg_name].id
-    ]
-  }
-
-  additional_block_storages = [for vol in lookup(each.value, "additional_block_storages", []) :
-    {
-      name        = vol.name
-      description = lookup(vol, "description", null)
-      disk_type   = lookup(vol, "disk_type", "SSD")
-      size        = vol.size
-    }
-  ]
+  default_network_interface = each.value.default_network_interface
+  additional_block_storages = each.value.additional_block_storages
 }
 
 ```
