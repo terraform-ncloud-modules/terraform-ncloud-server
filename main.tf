@@ -1,18 +1,9 @@
 data "ncloud_server_image" "server_image" {
-  # count = var.server_image_name != null ? 1 : 0
   filter {
     name   = "product_name"
     values = [var.server_image_name]
   }
 }
-
-# data "ncloud_member_server_image" "member_server_image" {
-#   count = var.member_server_image_name != null ? 1 : 0
-#   filter {
-#     name   = "product_name"
-#     values = [var.member_server_image_name]
-#   }
-# }
 
 locals {
   product_type = {
@@ -25,7 +16,6 @@ locals {
 }
 
 data "ncloud_server_product" "server_product" {
-  # server_image_product_code = one(data.ncloud_server_image.server_image.*.id)
   server_image_product_code = data.ncloud_server_image.server_image.id
 
   filter {
@@ -66,13 +56,11 @@ data "ncloud_subnet" "subnet" {
 resource "ncloud_server" "server" {
   name           = var.name
   description    = var.description
-  subnet_no      = var.subnet_id == null ? one(data.ncloud_subnet.subnet.*.id) : var.subnet_id
+  subnet_no      = coalesce(var.subnet_id, one(data.ncloud_subnet.subnet.*.id))
   login_key_name = var.login_key_name
 
   server_image_product_code = data.ncloud_server_image.server_image.id
-  # server_image_product_code = one(data.ncloud_server_image.server_image.*.id)
-  # member_server_image_no    = one(data.ncloud_member_server_image.member_server_image.*.id)
-  server_product_code = data.ncloud_server_product.server_product.product_code
+  server_product_code       = data.ncloud_server_product.server_product.product_code
 
   network_interface {
     network_interface_no = ncloud_network_interface.default_nic.id
@@ -87,7 +75,7 @@ resource "ncloud_server" "server" {
 }
 
 data "ncloud_access_control_group" "acgs" {
-  for_each = toset(lookup(var.default_network_interface, "access_control_groups", []))
+  for_each = toset(var.default_network_interface.access_control_groups)
 
   vpc_no     = one(data.ncloud_vpc.vpc.*.id)
   is_default = (each.key == "default" ? true : false)
@@ -97,16 +85,13 @@ data "ncloud_access_control_group" "acgs" {
   }
 }
 
-locals {
-  default_nic_acg_ids = [for acg_name in lookup(var.default_network_interface, "access_control_groups", []) : data.ncloud_access_control_group.acgs[acg_name].id]
-}
-
 resource "ncloud_network_interface" "default_nic" {
   name                  = var.default_network_interface.name
-  description           = lookup(var.default_network_interface, "description", null)
-  subnet_no             = var.subnet_id == null ? one(data.ncloud_subnet.subnet.*.id) : var.subnet_id
+  description           = var.default_network_interface.description
+  subnet_no             = coalesce(var.subnet_id, one(data.ncloud_subnet.subnet.*.id))
   private_ip            = lookup(var.default_network_interface, "private_ip", "") != "" ? var.default_network_interface.private_ip : null
-  access_control_groups = lookup(var.default_network_interface, "access_control_group_ids", local.default_nic_acg_ids)
+  # access_control_groups = lookup(var.default_network_interface, "access_control_group_ids", values(data.ncloud_access_control_group.acgs).*.id)
+  access_control_groups = coalesce(var.default_network_interface.access_control_group_ids, values(data.ncloud_access_control_group.acgs).*.id)
 }
 
 resource "ncloud_public_ip" "public_ip" {
@@ -114,23 +99,12 @@ resource "ncloud_public_ip" "public_ip" {
   server_instance_no = ncloud_server.server.id
 }
 
-resource "ncloud_network_interface" "additional_nics" {
-  for_each = { for nic in var.additional_network_interfaces : nic.name => nic }
-
-  name                  = each.value.name
-  description           = lookup(each.value, "description", null)
-  subnet_no             = each.value.subnet_id
-  private_ip            = lookup(each.value, "private_ip", "") != "" ? each.value.private_ip : null
-  access_control_groups = each.value.access_control_group_ids
-  server_instance_no    = ncloud_server.server.id
-}
-
 resource "ncloud_block_storage" "additional_block_storages" {
   for_each = { for volume in var.additional_block_storages : volume.name => volume }
 
   name               = each.value.name
-  description        = lookup(each.value, "description", null)
-  disk_detail_type   = lookup(each.value, "disk_type", "SSD")
+  description        = each.value.description
+  disk_detail_type   = each.value.disk_type
   size               = each.value.size
   server_instance_no = ncloud_server.server.id
 }
