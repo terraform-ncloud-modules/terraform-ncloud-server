@@ -199,12 +199,13 @@ module "servers" {
   is_protect_server_termination          = each.value.is_protect_server_termination
   is_encrypted_base_block_storage_volume = each.value.is_encrypted_base_block_storage_volume
 
-  // you can use just 
+  // you can use just "default_network_interface" variable as is.
   default_network_interface = each.value.default_network_interface
   // or add "access_control_group_ids" attribute to the value of the "default_network_interface" variable for inter-module reference structure.
   default_network_interface = merge(each.value.default_network_interface, {
     access_control_group_ids = [for acg_name in each.value.default_network_interface.access_control_groups : module.vpcs[each.value.vpc_name].access_control_groups[acg_name].id]
   })
+
   additional_block_storages = each.value.additional_block_storages
 }
 

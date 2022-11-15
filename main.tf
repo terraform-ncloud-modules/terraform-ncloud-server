@@ -75,7 +75,7 @@ resource "ncloud_server" "server" {
 }
 
 data "ncloud_access_control_group" "acgs" {
-  for_each = toset(var.default_network_interface.access_control_groups)
+  for_each = toset(var.default_network_interface.access_control_group_ids == null ? var.default_network_interface.access_control_groups : [])
 
   vpc_no     = one(data.ncloud_vpc.vpc.*.id)
   is_default = (each.key == "default" ? true : false)
