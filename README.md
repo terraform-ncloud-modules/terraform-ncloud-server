@@ -205,6 +205,7 @@ module "servers" {
   default_network_interface = merge(each.value.default_network_interface, {
     access_control_group_ids = [for acg_name in each.value.default_network_interface.access_control_groups : module.vpcs[each.value.vpc_name].access_control_groups[acg_name].id]
   })
+  
   additional_block_storages = each.value.additional_block_storages
 }
 
