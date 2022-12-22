@@ -12,6 +12,7 @@ locals {
     "High Memory"   = "HIMEM"
     "GPU"           = "GPU"
     "Standard"      = "STAND"
+    "BareMetal"     = "BM"
   }
 }
 
@@ -60,7 +61,7 @@ resource "ncloud_server" "server" {
   login_key_name = var.login_key_name
 
   server_image_product_code = data.ncloud_server_image.server_image.id
-  server_product_code = data.ncloud_server_product.server_product.product_code
+  server_product_code       = data.ncloud_server_product.server_product.product_code
 
   network_interface {
     network_interface_no = ncloud_network_interface.default_nic.id
@@ -75,7 +76,7 @@ resource "ncloud_server" "server" {
 }
 
 data "ncloud_access_control_group" "acgs" {
-  for_each = toset(try(var.default_network_interface.access_control_groups, []))
+  for_each = toset(var.default_network_interface.access_control_group_ids == null ? var.default_network_interface.access_control_groups : [])
 
   vpc_no     = one(data.ncloud_vpc.vpc.*.id)
   is_default = (each.key == "default" ? true : false)
@@ -86,11 +87,12 @@ data "ncloud_access_control_group" "acgs" {
 }
 
 resource "ncloud_network_interface" "default_nic" {
-  name                  = var.default_network_interface.name
-  description           = var.default_network_interface.description
-  subnet_no             = coalesce(var.subnet_id, one(data.ncloud_subnet.subnet.*.id))
-  private_ip            = lookup(var.default_network_interface, "private_ip", "") != "" ? var.default_network_interface.private_ip : null
-  access_control_groups = lookup(var.default_network_interface, "access_control_group_ids", values(data.ncloud_access_control_group.acgs).*.id)
+  name        = var.default_network_interface.name
+  description = var.default_network_interface.description
+  subnet_no   = coalesce(var.subnet_id, one(data.ncloud_subnet.subnet.*.id))
+  private_ip  = lookup(var.default_network_interface, "private_ip", "") != "" ? var.default_network_interface.private_ip : null
+  # access_control_groups = lookup(var.default_network_interface, "access_control_group_ids", values(data.ncloud_access_control_group.acgs).*.id)
+  access_control_groups = coalesce(var.default_network_interface.access_control_group_ids, values(data.ncloud_access_control_group.acgs).*.id)
 }
 
 resource "ncloud_public_ip" "public_ip" {

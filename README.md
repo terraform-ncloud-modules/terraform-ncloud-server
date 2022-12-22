@@ -180,10 +180,10 @@ module "servers" {
   name                 = each.value.name
   description          = each.value.description
 
-  // you can use "vpc_name" & "subnet_name"
+  // you can use "vpc_name" & "subnet_name". Then module will find "subnet_id" from "DataSource: ncloud_subnet".
   vpc_name             = each.value.vpc_name
   subnet_name          = each.value.subnet_name
-  // or "subnet_id" instead
+  // or use only "subnet_id" instead for inter-module reference structure.
   # subnet_id            = module.vpcs[each.value.vpc_name].subnets[each.value.subnet_name].id
 
   login_key_name       = each.value.login_key_name
@@ -199,7 +199,13 @@ module "servers" {
   is_protect_server_termination          = each.value.is_protect_server_termination
   is_encrypted_base_block_storage_volume = each.value.is_encrypted_base_block_storage_volume
 
+  // you can use just "default_network_interface" variable as is.
   default_network_interface = each.value.default_network_interface
+  // or add "access_control_group_ids" attribute to the value of the "default_network_interface" variable for inter-module reference structure.
+  default_network_interface = merge(each.value.default_network_interface, {
+    access_control_group_ids = [for acg_name in each.value.default_network_interface.access_control_groups : module.vpcs[each.value.vpc_name].access_control_groups[acg_name].id]
+  })
+
   additional_block_storages = each.value.additional_block_storages
 }
 

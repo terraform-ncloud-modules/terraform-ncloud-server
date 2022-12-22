@@ -93,13 +93,19 @@ variable "is_encrypted_base_block_storage_volume" {
 
 variable "default_network_interface" {
   description = "(Required) See the description in the readme"
-  # type        = map(map(any))
+  type = object({
+    name                     = string
+    description              = optional(string, "")
+    private_ip               = optional(string, null)
+    access_control_groups    = optional(list(string), null)
+    access_control_group_ids = optional(list(string), null)
+  })
 }
 
 variable "additional_network_interfaces" {
   description = "(Optional) See the description in the readme"
   type        = list(any)
-  default     = null
+  default     = []
 }
 
 variable "additional_block_storages" {
